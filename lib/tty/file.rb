@@ -184,10 +184,10 @@ module TTY
     # @return [void]
     #
     # @api public
-    def create_directory(destination, *args, context: nil, verbose: true,
+    def create_directory(destination, parent = nil , context: nil, verbose: true,
                          color: :green, noop: false, force: false, skip: false,
                          quiet: true)
-      parent = args.size.nonzero? ? args.pop : nil
+
       if destination.is_a?(String) || destination.is_a?(Pathname)
         destination = { destination.to_s => [] }
       end
@@ -246,10 +246,10 @@ module TTY
     #   end
     #
     # @api public
-    def create_file(relative_path, *args, context: nil, force: false, skip: false,
+    def create_file(relative_path, content = nil, context: nil, force: false, skip: false,
                     verbose: true, color: :green, noop: false, quiet: true, &block)
       relative_path = relative_path.to_s
-      content = block_given? ? block[] : args.join
+      content = block_given? ? block[] : content
 
       CreateFile.new(self, relative_path, content, context: context, force: force,
                      skip: skip, verbose: verbose, color: color, noop: noop,
@@ -286,10 +286,11 @@ module TTY
     #   the color name to use for logging
     #
     # @api public
-    def copy_file(source_path, *args, context: nil, force: false, skip: false,
+    def copy_file(source_path, dest_path = nil, context: nil, force: false, skip: false,
                   verbose: true, color: :green, noop: false, preserve: nil, &block)
       source_path = source_path.to_s
-      dest_path = (args.first || source_path).to_s.sub(/\.erb$/, "")
+      dest_path ||= source_path
+      dest_path = dest_path.to_s.sub(/\.erb$/, "")
 
       ctx = if context
               context.instance_eval("binding")
@@ -369,13 +370,14 @@ module TTY
     #   a regex that specifies files to ignore when copying
     #
     # @api public
-    def copy_directory(source_path, *args, context: nil, force: false, skip: false,
+    def copy_directory(source_path, dest_path=nil, context: nil, force: false, skip: false,
                        verbose: true, color: :green, noop: false, preserve: nil,
                        recursive: true, exclude: nil, &block)
       source_path = source_path.to_s
       check_path(source_path)
       source = escape_glob_path(source_path)
-      dest_path = (args.first || source).to_s
+      dest_path ||= source_path
+      dest_path = dest_path.to_s
       pattern = recursive ? ::File.join(source, "**") : source
       glob_pattern = ::File.join(pattern, "*")
 
@@ -716,7 +718,7 @@ module TTY
     #   remove_file "doc/README.md"
     #
     # @api public
-    def remove_file(relative_path, *args, verbose: true, color: :red, noop: false,
+    def remove_file(relative_path, verbose: true, color: :red, noop: false,
                     force: nil, secure: true)
       relative_path = relative_path.to_s
       log_status(:remove, relative_path, verbose: verbose, color: color)
